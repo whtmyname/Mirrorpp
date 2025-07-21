@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Unmirrored Group Selfie</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    #capture-btn {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 80px;
+      background-color: white;
+      border: 5px solid #444;
+      border-radius: 50%;
+      z-index: 10;
+      cursor: pointer;
+    }
+    canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <video id="video" autoplay playsinline></video>
+  <button id="capture-btn"></button>
+  <canvas id="canvas" width="3264" height="1840"></canvas>
+  <a id="download" download="unmirrored_photo.png" style="display: none;"></a>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture-btn');
+    const downloadLink = document.getElementById('download');
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 3264 }, height: { ideal: 1840 } },
+          audio: false
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Camera access error: " + err.message);
+      }
+    }
+
+    captureBtn.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      const { videoWidth: w, videoHeight: h } = video;
+      canvas.width = 3264;
+      canvas.height = 1840;
+
+      const scaleX = canvas.width / w;
+      const scaleY = canvas.height / h;
+
+      context.save();
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
+      context.scale(scaleX, scaleY);
+      context.drawImage(video, 0, 0, w, h);
+      context.restore();
+
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.click();
+      }, 'image/png');
+    });
+
+    startCamera();
+  </script>
+</body>
+</html>
